@@ -2,7 +2,7 @@
 
 ## Team Members
 
+- Miguel Angel Ramirez Ramirez Martinez
 - Vera Antamanova
-- [Team Member Name]
-- [Team Member Name]
-- [Team Member Name]
+- Mulubahzumu Kemmeh Sipor
+- Farhan abdi Mohamud
