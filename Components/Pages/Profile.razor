@@ -1,5 +1,107 @@
 @page "/profile"
 
-<PageTitle>Profile</PageTitle>
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
-<h1>Profile</h1>
+@using CSE325_GROUP.Data
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
+
+<PageTitle>My Profile | GameTracker</PageTitle>
+
+<p class="page-eyebrow">Your account</p>
+<h1>My profile</h1>
+<p class="page-intro">Your account details and a quick look at your collection.</p>
+
+@if (user is null)
+{
+    <div class="page-empty-state" role="alert">
+        <h2>We couldn't load your profile.</h2>
+        <p>Please sign in again to view your account.</p>
+        <a class="btn btn-primary" href="Account/Login?ReturnUrl=%2Fprofile">Sign in</a>
+    </div>
+}
+else
+{
+    <section class="profile-card" aria-labelledby="account-heading">
+        <div class="profile-heading">
+            <div class="profile-avatar" aria-hidden="true">@GetInitial()</div>
+            <div>
+                <h2 id="account-heading">@user.UserName</h2>
+                <p>GameTracker member</p>
+            </div>
+        </div>
+
+        <dl class="account-details">
+            <div>
+                <dt>Username</dt>
+                <dd>@user.UserName</dd>
+            </div>
+            <div>
+                <dt>Email address</dt>
+                <dd>@user.Email</dd>
+            </div>
+            <div>
+                <dt>Phone number</dt>
+                <dd>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "Not added" : user.PhoneNumber)</dd>
+            </div>
+            <div>
+                <dt>Email status</dt>
+                <dd>@(user.EmailConfirmed ? "Confirmed" : "Not confirmed")</dd>
+            </div>
+        </dl>
+        <a class="btn btn-outline-primary" href="Account/Manage">Manage account</a>
+    </section>
+
+    <section class="library-section" aria-labelledby="library-heading">
+        <h2 id="library-heading">Your collection</h2>
+        <div class="profile-stats">
+            <div class="profile-stat">
+                <span class="stat-value">@totalGames</span>
+                <span>Games in your library</span>
+            </div>
+            <div class="profile-stat">
+                <span class="stat-value">@ratedGames</span>
+                <span>Games you've rated</span>
+            </div>
+        </div>
+
+        @if (totalGames == 0)
+        {
+            <div class="page-empty-state">
+                <h3>Your collection starts here.</h3>
+                <p>You haven't added any games yet. Explore the catalog to find a few favorites.</p>
+                <a class="btn btn-primary" href="/#featured-games">Explore games</a>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private ApplicationUser? user;
+    private int totalGames;
+    private int ratedGames;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationState;
+        user = await UserManager.GetUserAsync(authenticationState.User);
+        if (user is null)
+        {
+            return;
+        }
+
+        var library = DbContext.UserGames.AsNoTracking().Where(game => game.UserId == user.Id);
+        totalGames = await library.CountAsync();
+        ratedGames = await library.CountAsync(game => game.Rating.HasValue);
+    }
+
+    private string GetInitial()
+    {
+        return string.IsNullOrWhiteSpace(user?.UserName) ? "?" : user.UserName[..1].ToUpperInvariant();
+    }
+}

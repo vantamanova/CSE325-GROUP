@@ -1,0 +1,99 @@
+.profile-card {
+    max-width: 850px;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid #e0e6e1;
+    border-radius: 14px;
+    background: white;
+}
+
+.profile-heading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #edf4ee;
+    color: #244f3c;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.profile-heading h2 {
+    margin: 0 0 0.35rem;
+    overflow-wrap: anywhere;
+    font-size: 1.25rem;
+}
+
+.profile-heading p {
+    margin: 0;
+    color: #64716a;
+    font-size: 0.9rem;
+}
+
+.account-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.account-details dt {
+    margin-bottom: 0.4rem;
+    color: #64716a;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.account-details dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-weight: 500;
+}
+
+.library-section {
+    max-width: 850px;
+    margin-top: 2.5rem;
+}
+
+.library-section h2 {
+    margin-bottom: 1.25rem;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.profile-stat {
+    padding: 1.5rem;
+    border: 1px solid #dbe5df;
+    border-radius: 12px;
+    background: #edf4ee;
+    color: #52645a;
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #244f3c;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+@media (max-width: 480px) {
+    .account-details,
+    .profile-stats {
+        grid-template-columns: 1fr;
+    }
+}
