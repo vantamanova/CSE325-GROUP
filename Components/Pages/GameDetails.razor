@@ -1,10 +1,78 @@
 @page "/game/{Id:int}"
 
+@using CSE325_GROUP.Data
+@using CSE325_GROUP.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext Db
+
 <PageTitle>Game Details</PageTitle>
 
-<h1>Game Details</h1>
+<div class="container py-4">
+    @if (isLoading)
+    {
+        <p role="status">Loading game details...</p>
+    }
+    else if (game is null)
+    {
+        <div class="alert alert-warning" role="alert">
+            Game not found.
+        </div>
+        <a class="btn btn-primary" href="/">Back to games</a>
+    }
+    else
+    {
+        <a class="btn btn-outline-secondary mb-4" href="/">&larr; Back to games</a>
+
+        <article class="row g-4 align-items-start">
+            <div class="col-12 col-md-4 col-lg-3">
+                <img class="img-fluid rounded shadow-sm w-100" src="@GetImagePath(game.CoverImage)" alt="Cover art for @game.Title" />
+            </div>
+            <div class="col-12 col-md-8 col-lg-9">
+                <h1>@game.Title</h1>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <span class="badge text-bg-secondary">@game.Genre</span>
+                    @if (game.ReleaseYear is not null)
+                    {
+                        <span class="badge text-bg-secondary">@game.ReleaseYear</span>
+                    }
+                </div>
+
+                <p class="lead">@game.Description</p>
+
+                <dl class="row mt-4">
+                    <dt class="col-sm-3">Platform</dt>
+                    <dd class="col-sm-9">@game.Platform</dd>
+
+                    <dt class="col-sm-3">Genre</dt>
+                    <dd class="col-sm-9">@game.Genre</dd>
+
+                    <dt class="col-sm-3">Release year</dt>
+                    <dd class="col-sm-9">@(game.ReleaseYear?.ToString() ?? "Unknown")</dd>
+                </dl>
+            </div>
+        </article>
+    }
+</div>
 
 @code {
     [Parameter]
     public int Id { get; set; }
+
+    private Game? game;
+    private bool isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        game = await Db.Games.AsNoTracking().SingleOrDefaultAsync(item => item.Id == Id);
+        isLoading = false;
+    }
+
+    private static string GetImagePath(string imagePath)
+    {
+        return imagePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+            ? imagePath[..^5] + ".png"
+            : imagePath;
+    }
 }
