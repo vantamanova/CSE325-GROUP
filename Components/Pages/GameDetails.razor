@@ -1,9 +1,13 @@
 @page "/game/{Id:int}"
+@rendermode InteractiveServer
 
 @using CSE325_GROUP.Data
 @using CSE325_GROUP.Models
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject ApplicationDbContext Db
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Game Details</PageTitle>
 
@@ -50,6 +54,24 @@
                     <dt class="col-sm-3">Release year</dt>
                     <dd class="col-sm-9">@(game.ReleaseYear?.ToString() ?? "Unknown")</dd>
                 </dl>
+
+                @if (isInCollection)
+                {
+                    <button class="btn btn-success" disabled>
+                        Added to My Games
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-primary" @onclick="AddToMyGames">
+                        Add to My Games
+                    </button>
+                }
+
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <p class="mt-2">@message</p>
+                }
             </div>
         </article>
     }
@@ -61,11 +83,28 @@
 
     private Game? game;
     private bool isLoading = true;
+    private bool isInCollection;
+    private string message = string.Empty;
+    private string? userId;
 
     protected override async Task OnParametersSetAsync()
     {
         isLoading = true;
-        game = await Db.Games.AsNoTracking().SingleOrDefaultAsync(item => item.Id == Id);
+
+        game = await Db.Games
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == Id);
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId != null)
+        {
+            isInCollection = await Db.UserGames
+                .AnyAsync(ug => ug.UserId == userId && ug.GameId == Id);
+        }
+
         isLoading = false;
     }
 
@@ -74,5 +113,29 @@
         return imagePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
             ? imagePath[..^5] + ".png"
             : imagePath;
+    }
+
+    // Add the game to the user's collection
+    private async Task AddToMyGames()
+    {
+        if (userId == null || game == null)
+        {
+            message = "You must be logged in to add games.";
+            return;
+        }
+
+        var userGame = new UserGame
+        {
+            UserId = userId,
+            GameId = game.Id,
+            Status = "Want to Play",
+            Rating = null
+        };
+
+        Db.UserGames.Add(userGame);
+        await Db.SaveChangesAsync();
+
+        isInCollection = true;
+        message = "Game added to My Games!";
     }
 }
