@@ -52,7 +52,7 @@ a, .btn-link {
 
 .page-intro {
     margin: 0.75rem 0 2rem;
-    color: #64716a;
+    color: #58645d;
     line-height: 1.6;
 }
 
@@ -69,12 +69,12 @@ a, .btn-link {
     background: white;
 }
 
-.page-empty-state h3 {
+.page-empty-state h2 {
     font-size: 1.15rem;
 }
 
 .page-empty-state p {
-    color: #64716a;
+    color: #58645d;
 }
 
 h1:focus {

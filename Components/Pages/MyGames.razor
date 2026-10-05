@@ -26,7 +26,7 @@
     else if (userGames.Count == 0)
     {
         <div class="page-empty-state">
-            <h3>Your collection is empty.</h3>
+            <h2>Your collection is empty.</h2>
             <p>Add games from the catalog to start building your collection.</p>
             <a class="btn btn-primary" href="/">Explore games</a>
         </div>
@@ -44,7 +44,7 @@
                          loading="lazy" />
 
                     <div class="game-card-body">
-                        <h3>@userGame.Game.Title</h3>
+                        <h2>@userGame.Game.Title</h2>
 
                     @if (editingGameId == userGame.GameId)
                     {
