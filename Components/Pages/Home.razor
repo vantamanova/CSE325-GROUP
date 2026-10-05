@@ -57,7 +57,9 @@
                 <article class="game-card" @key="game.Id">
                     @if (cover is not null)
                     {
-                        <img class="game-cover" src="@cover" alt="Cover of @game.Title" loading="lazy" width="400" height="500" />
+                        <a class="game-cover-link" href="/game/@game.Id">
+                            <img class="game-cover" src="@cover" alt="Cover of @game.Title" loading="lazy" width="400" height="500" />
+                        </a>
                     }
                     else
                     {

@@ -19,8 +19,12 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
-                <input type="text" value="@username" id="username" class="form-control" placeholder="Choose your username." disabled />
-                <label for="username" class="form-label">Username</label>
+                <InputText @bind-Value="Input.Username"
+                        id="Input.Username"
+                        class="form-control"
+                        placeholder="Choose your username." />
+                <label for="Input.Username" class="form-label">Username</label>
+                <ValidationMessage For="() => Input.Username" class="text-danger" />
             </div>
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.PhoneNumber" id="Input.PhoneNumber" class="form-control" placeholder="Enter your phone number" />
@@ -57,6 +61,7 @@
         username = await UserManager.GetUserNameAsync(user);
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
 
+        Input.Username ??= username;
         Input.PhoneNumber ??= phoneNumber;
     }
 
@@ -66,6 +71,19 @@
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
+        }
+
+        if (Input.Username != username)
+        {
+            var setUsernameResult = await UserManager.SetUserNameAsync(user, Input.Username!);
+
+            if (!setUsernameResult.Succeeded)
+            {
+                RedirectManager.RedirectToCurrentPageWithStatus(
+                    "Error: Failed to set username.",
+                    HttpContext);
+                return;
+            }
         }
 
         if (Input.PhoneNumber != phoneNumber)
@@ -83,9 +101,13 @@
     }
 
     private sealed class InputModel
-    {
-        [Phone]
-        [Display(Name = "Phone number")]
-        public string? PhoneNumber { get; set; }
-    }
+{
+    [Required]
+    [Display(Name = "Username")]
+    public string? Username { get; set; }
+
+    [Phone]
+    [Display(Name = "Phone number")]
+    public string? PhoneNumber { get; set; }
+}
 }

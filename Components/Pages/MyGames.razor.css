@@ -1,0 +1,166 @@
+.my-games-header {
+    margin-bottom: 2rem;
+}
+
+.my-games-header h1 {
+    margin-bottom: 0.5rem;
+}
+
+.my-games-header p {
+    margin: 0;
+    color: #64716a;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.game-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e0e6e1;
+    border-radius: 12px;
+    background: white;
+}
+
+.game-cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    background: #e5ece7;
+}
+
+.game-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.25rem;
+}
+
+.game-card h3 {
+    margin-bottom: 0.75rem;
+    font-size: 1.05rem;
+    line-height: 1.4;
+}
+
+.game-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: #64716a;
+    font-size: 0.8rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    background: #edf4ee;
+    color: #244f3c;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.game-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.game-edit {
+    margin-bottom: 1rem;
+}
+
+.game-edit label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: #64716a;
+    font-size: 0.8rem;
+}
+
+.game-edit select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #dbe5df;
+    border-radius: 6px;
+    background: white;
+    color: #244f3c;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.game-card-actions {
+    margin-top: auto;
+}
+
+.game-rating {
+    margin-bottom: 1rem;
+    color: #244f3c;
+    font-size: 1rem;
+    letter-spacing: 0.08rem;
+}
+
+.not-rated {
+    color: #64716a;
+    font-size: 0.8rem;
+    letter-spacing: normal;
+}
+
+.rating-edit {
+    margin-top: 1rem;
+}
+
+.star-rating {
+    display: flex;
+    gap: 0.15rem;
+}
+
+.star-button {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #244f3c;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.star-button:hover {
+    transform: scale(1.1);
+}
+
+.remove-game-button {
+    margin-top: 1rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #a33a3a;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.remove-game-button:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1100px) {
+    .game-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 420px) {
+    .game-grid {
+        grid-template-columns: 1fr;
+    }
+}

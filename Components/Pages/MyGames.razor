@@ -1,5 +1,205 @@
 @page "/my-games"
+@rendermode InteractiveServer
+
+@using CSE325_GROUP.Data
+@using CSE325_GROUP.Models
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+
+@inject ApplicationDbContext Db
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>My Games</PageTitle>
 
-<h1>My Games</h1>
+<div class="container py-4">
+    <header class="my-games-header">
+        <p class="page-eyebrow">Your collection</p>
+        <h1>My Games</h1>
+        <p>Keep track of the games you want to play, are playing, and have completed.</p>
+    </header>
+
+    @if (isLoading)
+    {
+        <p>Loading your games...</p>
+    }
+    else if (userGames.Count == 0)
+    {
+        <div class="page-empty-state">
+            <h3>Your collection is empty.</h3>
+            <p>Add games from the catalog to start building your collection.</p>
+            <a class="btn btn-primary" href="/">Explore games</a>
+        </div>
+    }
+    else
+    {
+        <div class="game-grid">
+            @foreach (var userGame in userGames)
+            {
+                <article class="game-card" @key="userGame.GameId">
+
+                    <img class="game-cover"
+                         src="@GetImagePath(userGame.Game.CoverImage)"
+                         alt="Cover of @userGame.Game.Title"
+                         loading="lazy" />
+
+                    <div class="game-card-body">
+                        <h3>@userGame.Game.Title</h3>
+
+                    @if (editingGameId == userGame.GameId)
+                    {
+                        <div class="game-edit">
+                            <label for="status-@userGame.GameId">Status</label>
+
+                            <select id="status-@userGame.GameId"
+                                    @bind="editStatus">
+                                <option value="Want to Play">Want to Play</option>
+                                <option value="Playing">Playing</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+
+                            <div class="rating-edit">
+                            <label>Rating</label>
+
+                            <div class="star-rating">
+                                @for (int rating = 1; rating <= 5; rating++)
+                                {
+                                    var starRating = rating;
+
+                                    <button type="button"
+                                            class="star-button"
+                                            @onclick="() => editRating = starRating">
+                                        @(editRating >= starRating ? "★" : "☆")
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                            <div class="edit-actions">
+                                <button class="btn btn-primary"
+                                        @onclick="() => SaveEdit(userGame)">
+                                    Save
+                                </button>
+
+                                <button class="btn btn-outline-secondary"
+                                        @onclick="CancelEdit">
+                                    Cancel
+                                </button>
+
+                                <button class="remove-game-button"
+                                @onclick="() => RemoveGame(userGame)">
+                                    Remove from My Games
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="game-status">
+                            <span class="status-badge">@userGame.Status</span>
+                        </p>
+                        <div class="game-rating">
+                        @if (userGame.Rating.HasValue)
+                        {
+                            @for (int star = 1; star <= 5; star++)
+                            {
+                                <span>@(star <= userGame.Rating.Value ? "★" : "☆")</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="not-rated">Not rated</span>
+                        }
+                    </div>
+                    }
+
+                        <div class="game-card-actions">
+                        <a class="btn btn-outline-primary"
+                        href="/game/@userGame.GameId">
+                            View Game
+                        </a>
+
+                        @if (editingGameId != userGame.GameId)
+                        {
+                            <button class="btn btn-outline-primary"
+                                    @onclick="() => StartEdit(userGame)">
+                                Edit
+                            </button>
+                        }
+                    </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<UserGame> userGames = new();
+    private bool isLoading = true;
+    private int? editingGameId;
+    private string editStatus = string.Empty;
+    private int? editRating;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        var userId =
+            authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId != null)
+        {
+            userGames = await Db.UserGames
+                .Include(ug => ug.Game)
+                .Where(ug => ug.UserId == userId)
+                .ToListAsync();
+        }
+
+        isLoading = false;
+    }
+
+    private static string GetImagePath(string imagePath)
+    {
+        return imagePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+            ? imagePath[..^5] + ".png"
+            : imagePath;
+    }
+
+    private void StartEdit(UserGame userGame)
+    {
+        editingGameId = userGame.GameId;
+        editStatus = userGame.Status;
+        editRating = userGame.Rating;
+    }
+
+    private void CancelEdit()
+    {
+        editingGameId = null;
+        editStatus = string.Empty;
+        editRating = null;
+    }
+
+    private async Task SaveEdit(UserGame userGame)
+    {
+        userGame.Status = editStatus;
+        userGame.Rating = editRating;
+
+        await Db.SaveChangesAsync();
+
+        editingGameId = null;
+        editStatus = string.Empty;
+        editRating = null;
+    }
+
+    private async Task RemoveGame(UserGame userGame)
+    {
+        Db.UserGames.Remove(userGame);
+        await Db.SaveChangesAsync();
+
+        userGames.Remove(userGame);
+
+        editingGameId = null;
+    }
+}
