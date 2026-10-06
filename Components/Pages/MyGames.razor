@@ -33,104 +33,143 @@
     }
     else
     {
-        <div class="game-grid">
-            @foreach (var userGame in userGames)
-            {
-                <article class="game-card" @key="userGame.GameId">
+        <div class="collection-toolbar" role="search">
+            <div class="search-field">
+                <label for="game-search">Search your games</label>
+                <input id="game-search" class="form-control" type="search" placeholder="Search by title" @bind="searchTerm"
+                       @bind:event="oninput" />
+            </div>
 
-                    <img class="game-cover"
-                         src="@GetImagePath(userGame.Game.CoverImage)"
-                         alt="Cover of @userGame.Game.Title"
-                         loading="lazy" />
+            <div class="filter-field">
+                <label for="status-filter">Status</label>
+                <select id="status-filter" class="form-select" @bind="selectedStatus">
+                    <option value="">All statuses</option>
+                    <option value="Want to Play">Want to Play</option>
+                    <option value="Playing">Playing</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
 
-                    <div class="game-card-body">
-                        <h3>@userGame.Game.Title</h3>
-
-                    @if (editingGameId == userGame.GameId)
+            <div class="filter-field">
+                <label for="genre-filter">Genre</label>
+                <select id="genre-filter" class="form-select" @bind="selectedGenre">
+                    <option value="">All genres</option>
+                    @foreach (var genre in Genres)
                     {
-                        <div class="game-edit">
-                            <label for="status-@userGame.GameId">Status</label>
+                        <option value="@genre">@genre</option>
+                    }
+                </select>
+            </div>
 
-                            <select id="status-@userGame.GameId"
-                                    @bind="editStatus">
-                                <option value="Want to Play">Want to Play</option>
-                                <option value="Playing">Playing</option>
-                                <option value="Completed">Completed</option>
-                            </select>
+            @if (HasActiveFilters)
+            {
+                <button type="button" class="btn btn-outline-secondary clear-filters" @onclick="ClearFilters">
+                    Clear filters
+                </button>
+            }
+        </div>
 
-                            <div class="rating-edit">
-                            <label>Rating</label>
+        @if (!FilteredUserGames.Any())
+        {
+            <div class="page-empty-state">
+                <h3>No games match your filters.</h3>
+                <p>Try a different search or clear the filters to see your collection.</p>
+                <button type="button" class="btn btn-outline-primary" @onclick="ClearFilters">
+                    Clear filters
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="game-grid">
+                @foreach (var userGame in FilteredUserGames)
+                {
+                    <article class="game-card" @key="userGame.GameId">
 
-                            <div class="star-rating">
-                                @for (int rating = 1; rating <= 5; rating++)
+                        <img class="game-cover" src="@GetImagePath(userGame.Game.CoverImage)" alt="Cover of @userGame.Game.Title"
+                             loading="lazy" />
+
+                        <div class="game-card-body">
+                            <h3>@userGame.Game.Title</h3>
+
+                            @if (editingGameId == userGame.GameId)
+                            {
+                                <div class="game-edit">
+                                    <label for="status-@userGame.GameId">Status</label>
+
+                                    <select id="status-@userGame.GameId" @bind="editStatus">
+                                        <option value="Want to Play">Want to Play</option>
+                                        <option value="Playing">Playing</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+
+                                    <div class="rating-edit">
+                                        <label>Rating</label>
+
+                                        <div class="star-rating">
+                                            @for (int rating = 1; rating <= 5; rating++)
+                                            {
+                                                var starRating = rating;
+
+                                                <button type="button" class="star-button" @onclick="() => editRating = starRating">
+                                                    @(editRating >= starRating ? "★" : "☆")
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="edit-actions">
+                                        <button class="btn btn-primary" @onclick="() => SaveEdit(userGame)">
+                                            Save
+                                        </button>
+
+                                        <button class="btn btn-outline-secondary" @onclick="CancelEdit">
+                                            Cancel
+                                        </button>
+
+                                        <button class="remove-game-button" @onclick="() => RemoveGame(userGame)">
+                                            Remove from My Games
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="game-status">
+                                    <span class="status-badge">@userGame.Status</span>
+                                </p>
+                                <div class="game-rating">
+                                    @if (userGame.Rating.HasValue)
+                                    {
+                                        @for (int star = 1; star <= 5; star++)
+                                        {
+                                            <span>@(star <= userGame.Rating.Value ? "★" : "☆")</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="not-rated">Not rated</span>
+                                    }
+                                </div>
+                            }
+
+                            <div class="game-card-actions">
+                                <a class="btn btn-outline-primary" href="/game/@userGame.GameId">
+                                    View Game
+                                </a>
+
+                                @if (editingGameId != userGame.GameId)
                                 {
-                                    var starRating = rating;
-
-                                    <button type="button"
-                                            class="star-button"
-                                            @onclick="() => editRating = starRating">
-                                        @(editRating >= starRating ? "★" : "☆")
+                                    <button class="btn btn-outline-primary" @onclick="() => StartEdit(userGame)">
+                                        Edit
                                     </button>
                                 }
                             </div>
                         </div>
-
-                            <div class="edit-actions">
-                                <button class="btn btn-primary"
-                                        @onclick="() => SaveEdit(userGame)">
-                                    Save
-                                </button>
-
-                                <button class="btn btn-outline-secondary"
-                                        @onclick="CancelEdit">
-                                    Cancel
-                                </button>
-
-                                <button class="remove-game-button"
-                                @onclick="() => RemoveGame(userGame)">
-                                    Remove from My Games
-                                </button>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="game-status">
-                            <span class="status-badge">@userGame.Status</span>
-                        </p>
-                        <div class="game-rating">
-                        @if (userGame.Rating.HasValue)
-                        {
-                            @for (int star = 1; star <= 5; star++)
-                            {
-                                <span>@(star <= userGame.Rating.Value ? "★" : "☆")</span>
-                            }
-                        }
-                        else
-                        {
-                            <span class="not-rated">Not rated</span>
-                        }
-                    </div>
-                    }
-
-                        <div class="game-card-actions">
-                        <a class="btn btn-outline-primary"
-                        href="/game/@userGame.GameId">
-                            View Game
-                        </a>
-
-                        @if (editingGameId != userGame.GameId)
-                        {
-                            <button class="btn btn-outline-primary"
-                                    @onclick="() => StartEdit(userGame)">
-                                Edit
-                            </button>
-                        }
-                    </div>
-                    </div>
-                </article>
-            }
-        </div>
+                    </article>
+                }
+            </div>
+        }
     }
 </div>
 
@@ -140,6 +179,27 @@
     private int? editingGameId;
     private string editStatus = string.Empty;
     private int? editRating;
+    private string searchTerm = string.Empty;
+    private string selectedStatus = string.Empty;
+    private string selectedGenre = string.Empty;
+
+    private IEnumerable<UserGame> FilteredUserGames => userGames
+        .Where(userGame =>
+            (string.IsNullOrWhiteSpace(searchTerm)
+                || userGame.Game.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrEmpty(selectedStatus) || userGame.Status == selectedStatus)
+            && (string.IsNullOrEmpty(selectedGenre) || userGame.Game.Genre == selectedGenre))
+        .OrderBy(userGame => userGame.Game.Title);
+
+    private IEnumerable<string> Genres => userGames
+        .Select(userGame => userGame.Game.Genre)
+        .Where(genre => !string.IsNullOrWhiteSpace(genre))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(genre => genre);
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(searchTerm)
+        || !string.IsNullOrEmpty(selectedStatus)
+        || !string.IsNullOrEmpty(selectedGenre);
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,5 +261,12 @@
         userGames.Remove(userGame);
 
         editingGameId = null;
+    }
+
+    private void ClearFilters()
+    {
+        searchTerm = string.Empty;
+        selectedStatus = string.Empty;
+        selectedGenre = string.Empty;
     }
 }
