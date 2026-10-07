@@ -2,11 +2,15 @@
 
 @using CSE325_GROUP.Data
 @using CSE325_GROUP.Models
+@using CSE325_GROUP.Components.Account.Shared
 @using Microsoft.EntityFrameworkCore
 @inject ApplicationDbContext DbContext
 @inject IWebHostEnvironment Environment
+@inject ILogger<Home> Logger
 
 <PageTitle>Home | GameTracker</PageTitle>
+
+<StatusMessage Message="@errorMessage" />
 
 <section class="welcome-panel" aria-labelledby="welcome-heading">
     <div class="welcome-copy">
@@ -85,15 +89,25 @@
 @code {
     private int gameCount;
     private List<Game> featuredGames = [];
+    private string? errorMessage;
     private readonly Dictionary<string, string> coverImages = new(StringComparer.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
-        gameCount = await DbContext.Games.CountAsync();
-        featuredGames = await DbContext.Games.AsNoTracking()
-            .OrderBy(game => game.Id)
-            .Take(6)
-            .ToListAsync();
+        try
+        {
+            gameCount = await DbContext.Games.CountAsync();
+            featuredGames = await DbContext.Games.AsNoTracking()
+                .OrderBy(game => game.Id)
+                .Take(6)
+                .ToListAsync();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Failed to load the game catalog for the home page.");
+            errorMessage = "The game catalog couldn't be loaded. Please try again later.";
+            return;
+        }
 
         // Seeded covers may use a different extension from the files in wwwroot.
         var coversDirectory = Path.Combine(Environment.WebRootPath, "images", "games");

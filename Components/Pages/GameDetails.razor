@@ -1,13 +1,17 @@
-@page "/game/{Id:int}"
+@page "/game"
+@page "/game/{Id}"
 @rendermode InteractiveServer
 
 @using CSE325_GROUP.Data
 @using CSE325_GROUP.Models
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components
 @using System.Security.Claims
 @inject ApplicationDbContext Db
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<GameDetails> Logger
+@inject NavigationManager NavigationManager
 
 <PageTitle>Game Details</PageTitle>
 
@@ -15,6 +19,11 @@
     @if (isLoading)
     {
         <p role="status">Loading game details...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+        <a class="btn btn-primary" href="/">Back to games</a>
     }
     else if (game is null)
     {
@@ -79,33 +88,60 @@
 
 @code {
     [Parameter]
-    public int Id { get; set; }
+    public string? Id { get; set; }
 
     private Game? game;
     private bool isLoading = true;
     private bool isInCollection;
     private string message = string.Empty;
+    private string? errorMessage;
     private string? userId;
 
     protected override async Task OnParametersSetAsync()
     {
         isLoading = true;
+        game = null;
+        isInCollection = false;
+        errorMessage = null;
 
-        game = await Db.Games
-            .AsNoTracking()
-            .SingleOrDefaultAsync(item => item.Id == Id);
-
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-
-        userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (userId != null)
+        if (!int.TryParse(Id, out var gameId) || gameId <= 0)
         {
-            isInCollection = await Db.UserGames
-                .AnyAsync(ug => ug.UserId == userId && ug.GameId == Id);
+            NavigationManager.NotFound();
+            isLoading = false;
+            return;
         }
 
-        isLoading = false;
+        try
+        {
+            game = await Db.Games
+                .AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Id == gameId);
+
+            if (game is null)
+            {
+                NavigationManager.NotFound();
+                return;
+            }
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId != null)
+            {
+                isInCollection = await Db.UserGames
+                    .AnyAsync(ug => ug.UserId == userId && ug.GameId == gameId);
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Failed to load game details for game {GameId}.", gameId);
+            errorMessage = "Game details couldn't be loaded. Please try again later.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private static string GetImagePath(string imagePath)
@@ -132,10 +168,20 @@
             Rating = null
         };
 
-        Db.UserGames.Add(userGame);
-        await Db.SaveChangesAsync();
+        try
+        {
+            Db.UserGames.Add(userGame);
+            await Db.SaveChangesAsync();
 
-        isInCollection = true;
-        message = "Game added to My Games!";
+            isInCollection = true;
+            errorMessage = null;
+            message = "Game added to My Games!";
+        }
+        catch (Exception exception)
+        {
+            Db.Entry(userGame).State = EntityState.Detached;
+            Logger.LogError(exception, "Failed to add game {GameId} to the user's collection.", game.Id);
+            errorMessage = "This game couldn't be added. Please try again.";
+        }
     }
 }
