@@ -12,6 +12,9 @@
 
   <ItemGroup>
     <Compile Remove="CSE325-GROUP.Tests/**/*.cs" />
+    <Content Remove="CSE325-GROUP.Tests\**\*" />
+    <None Remove="CSE325-GROUP.Tests\**\*" />
+    <EmbeddedResource Remove="CSE325-GROUP.Tests\**\*" />
   </ItemGroup>
 
   <ItemGroup>

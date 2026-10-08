@@ -68,6 +68,52 @@
     font-size: 0.9rem;
 }
 
+.catalog-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid #e0e6e1;
+    border-radius: 12px;
+    background: white;
+}
+
+.filter-field {
+    min-width: 0;
+}
+
+.filter-field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.filter-field .form-control,
+.filter-field .form-select {
+    border-color: #cbd8ce;
+    color: #24382d;
+}
+
+.filter-field .form-select:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #527e65;
+}
+
+.results-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 1rem 0 1.25rem;
+}
+
+.results-summary p {
+    margin: 0;
+    color: #64716a;
+    font-size: 0.9rem;
+}
+
 .game-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -124,6 +170,10 @@
 }
 
 @media (max-width: 1100px) {
+    .catalog-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .game-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -134,6 +184,12 @@
 
     .catalog-note {
         display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .catalog-filters {
+        grid-template-columns: 1fr;
     }
 }
 
