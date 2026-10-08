@@ -22,7 +22,15 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Use persistent storage on Render and the configured database locally
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+if (builder.Environment.IsProduction())
+{
+    connectionString = "Data Source=/var/data/gametracker.db";
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -40,10 +48,15 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 
 var app = builder.Build();
 
-// Seed the database with the initial game catalog
+// Apply database migrations and seed the initial game catalog
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // Create or update database tables using existing migrations
+    await context.Database.MigrateAsync();
+
+    // Add starter games if the catalog is empty
     await SeedData.InitializeAsync(context);
 }
 
