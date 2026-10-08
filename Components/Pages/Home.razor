@@ -12,7 +12,12 @@
 
 <PageTitle>Home | GameTracker</PageTitle>
 
-<StatusMessage Message="@errorMessage" />
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
 
 <section class="welcome-panel" aria-labelledby="welcome-heading">
     <div class="welcome-copy">
