@@ -4,11 +4,15 @@
 
 @using CSE325_GROUP.Data
 @using CSE325_GROUP.Models
+@using CSE325_GROUP.Components.Account.Shared
 @using Microsoft.EntityFrameworkCore
 @inject ApplicationDbContext DbContext
 @inject IWebHostEnvironment Environment
+@inject ILogger<Home> Logger
 
 <PageTitle>Home | GameTracker</PageTitle>
+
+<StatusMessage Message="@errorMessage" />
 
 <section class="welcome-panel" aria-labelledby="welcome-heading">
     <div class="welcome-copy">
@@ -154,6 +158,7 @@
     private string selectedGenre = string.Empty;
     private string selectedPlatform = string.Empty;
     private string selectedReleaseYear = string.Empty;
+    private string? errorMessage;
     private readonly Dictionary<string, string> coverImages = new(StringComparer.OrdinalIgnoreCase);
 
     private bool HasActiveFilters => !string.IsNullOrEmpty(searchTerm)
@@ -163,9 +168,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        games = await DbContext.Games.AsNoTracking()
-            .OrderBy(game => game.Id)
-            .ToListAsync();
+        try
+        {
+            games = await DbContext.Games.AsNoTracking()
+              .OrderBy(game => game.Id)
+              .ToListAsync();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Failed to load the game catalog for the home page.");
+            errorMessage = "The game catalog couldn't be loaded. Please try again later.";
+            return;
+        }
 
         genres = games.Select(game => game.Genre.Trim())
             .Where(genre => !string.IsNullOrEmpty(genre))

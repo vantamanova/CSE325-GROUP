@@ -59,6 +59,39 @@ else
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.Use(async (context, next) =>
+{
+    if ((HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)) &&
+        context.Request.Path.StartsWithSegments("/game", out var remainingPath))
+    {
+        var pathSegments = remainingPath.Value?
+            .Split('/', StringSplitOptions.RemoveEmptyEntries) ?? [];
+
+        if (pathSegments.Length != 1 ||
+            !int.TryParse(pathSegments[0], out var gameId) ||
+            gameId <= 0)
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        try
+        {
+            var db = context.RequestServices.GetRequiredService<ApplicationDbContext>();
+            if (!await db.Games.AnyAsync(game => game.Id == gameId))
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+        }
+        catch (Exception exception)
+        {
+            app.Logger.LogError(exception, "Failed to validate game route {GameId}.", gameId);
+        }
+    }
+
+    await next();
+});
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
