@@ -9,10 +9,16 @@
 
 @inject ApplicationDbContext Db
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<MyGames> Logger
 
 <PageTitle>My Games</PageTitle>
 
 <div class="container py-4">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
     <header class="my-games-header">
         <p class="page-eyebrow">Your collection</p>
         <h1>My Games</h1>
@@ -26,7 +32,7 @@
     else if (userGames.Count == 0)
     {
         <div class="page-empty-state">
-            <h3>Your collection is empty.</h3>
+            <h2>Your collection is empty.</h2>
             <p>Add games from the catalog to start building your collection.</p>
             <a class="btn btn-primary" href="/">Explore games</a>
         </div>
@@ -90,7 +96,7 @@
                              loading="lazy" />
 
                         <div class="game-card-body">
-                            <h3>@userGame.Game.Title</h3>
+                            <h2>@userGame.Game.Title</h2>
 
                             @if (editingGameId == userGame.GameId)
                             {
@@ -179,6 +185,7 @@
     private int? editingGameId;
     private string editStatus = string.Empty;
     private int? editRating;
+    private string? errorMessage;
     private string searchTerm = string.Empty;
     private string selectedStatus = string.Empty;
     private string selectedGenre = string.Empty;
@@ -203,21 +210,31 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState =
-            await AuthenticationStateProvider.GetAuthenticationStateAsync();
-
-        var userId =
-            authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (userId != null)
+        try
         {
-            userGames = await Db.UserGames
-                .Include(ug => ug.Game)
-                .Where(ug => ug.UserId == userId)
-                .ToListAsync();
-        }
+            var authState =
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
 
-        isLoading = false;
+            var userId =
+                authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId != null)
+            {
+                userGames = await Db.UserGames
+                    .Include(ug => ug.Game)
+                    .Where(ug => ug.UserId == userId)
+                    .ToListAsync();
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Failed to load the current user's game collection.");
+            errorMessage = "Your game collection couldn't be loaded. Please try again later.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private static string GetImagePath(string imagePath)
@@ -243,24 +260,47 @@
 
     private async Task SaveEdit(UserGame userGame)
     {
-        userGame.Status = editStatus;
-        userGame.Rating = editRating;
+        var originalStatus = userGame.Status;
+        var originalRating = userGame.Rating;
 
-        await Db.SaveChangesAsync();
+        try
+        {
+            userGame.Status = editStatus;
+            userGame.Rating = editRating;
+            await Db.SaveChangesAsync();
 
-        editingGameId = null;
-        editStatus = string.Empty;
-        editRating = null;
+            editingGameId = null;
+            editStatus = string.Empty;
+            editRating = null;
+            errorMessage = null;
+        }
+        catch (Exception exception)
+        {
+            userGame.Status = originalStatus;
+            userGame.Rating = originalRating;
+            Logger.LogError(exception, "Failed to update game {GameId} in the user's collection.", userGame.GameId);
+            errorMessage = "This game couldn't be updated. Please try again.";
+        }
     }
 
     private async Task RemoveGame(UserGame userGame)
     {
-        Db.UserGames.Remove(userGame);
-        await Db.SaveChangesAsync();
+        try
+        {
+            Db.UserGames.Remove(userGame);
+            await Db.SaveChangesAsync();
 
-        userGames.Remove(userGame);
+            userGames.Remove(userGame);
+            editingGameId = null;
+            errorMessage = null;
+        }
+        catch (Exception exception)
+        {
+            Db.Entry(userGame).State = EntityState.Unchanged;
+            Logger.LogError(exception, "Failed to remove game {GameId} from the user's collection.", userGame.GameId);
+            errorMessage = "This game couldn't be removed. Please try again.";
+        }
 
-        editingGameId = null;
     }
 
     private void ClearFilters()

@@ -9,14 +9,30 @@ main {
     min-width: 0;
 }
 
+main :focus {
+    scroll-margin-top: 4rem;
+}
+
 .sidebar {
     background: #203c30;
+}
+
+.sidebar ::deep a.nav-link.active {
+    background-color: #244f3c;
+    color: #fff;
+}
+
+.sidebar ::deep a.nav-link:focus-visible {
+    background-color: #244f3c;
+    color: #fff;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
 }
 
 .top-row {
     background-color: #fafbf8;
     border-bottom: 1px solid #e0e6e1;
-    color: #64716a;
+    color: #58645d;
     font-size: 0.85rem;
     justify-content: flex-end;
     height: 3.5rem;

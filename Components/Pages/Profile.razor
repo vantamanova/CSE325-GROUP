@@ -3,18 +3,22 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 @using CSE325_GROUP.Data
+@using CSE325_GROUP.Components.Account.Shared
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @inject UserManager<ApplicationUser> UserManager
 @inject ApplicationDbContext DbContext
+@inject ILogger<Profile> Logger
 
 <PageTitle>My Profile | GameTracker</PageTitle>
+
+<StatusMessage Message="@errorMessage" />
 
 <p class="page-eyebrow">Your account</p>
 <h1>My profile</h1>
 <p class="page-intro">Your account details and a quick look at your collection.</p>
 
-@if (user is null)
+@if (user is null && errorMessage is null)
 {
     <div class="page-empty-state" role="alert">
         <h2>We couldn't load your profile.</h2>
@@ -22,7 +26,7 @@
         <a class="btn btn-primary" href="Account/Login?ReturnUrl=%2Fprofile">Sign in</a>
     </div>
 }
-else
+else if (user is not null)
 {
     <section class="profile-card" aria-labelledby="account-heading">
         <div class="profile-heading">
@@ -85,19 +89,29 @@ else
     private ApplicationUser? user;
     private int totalGames;
     private int ratedGames;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        var authenticationState = await AuthenticationState;
-        user = await UserManager.GetUserAsync(authenticationState.User);
-        if (user is null)
+        try
         {
-            return;
-        }
+            var authenticationState = await AuthenticationState;
+            user = await UserManager.GetUserAsync(authenticationState.User);
+            if (user is null)
+            {
+                return;
+            }
 
-        var library = DbContext.UserGames.AsNoTracking().Where(game => game.UserId == user.Id);
-        totalGames = await library.CountAsync();
-        ratedGames = await library.CountAsync(game => game.Rating.HasValue);
+            var library = DbContext.UserGames.AsNoTracking().Where(game => game.UserId == user.Id);
+            totalGames = await library.CountAsync();
+            ratedGames = await library.CountAsync(game => game.Rating.HasValue);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Failed to load profile data.");
+            user = null;
+            errorMessage = "Your profile couldn't be loaded. Please try again later.";
+        }
     }
 
     private string GetInitial()
